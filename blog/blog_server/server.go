@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
 
 	"go-grpc-mongo/blog/blogproto"
 
@@ -13,8 +15,6 @@ import (
 type server struct{}
 
 func main() {
-	fmt.Println("Blog service started...")
-
 	lis, err := net.Listen("tcp", "0.0.0.0:8010")
 	if err != nil {
 		panic(err)
@@ -30,7 +30,21 @@ func main() {
 	opts := grpc.Creds(creds)
 	s := grpc.NewServer(opts)
 	blogproto.RegisterBlogServiceServer(s, &server{})
-	if err := s.Serve(lis); err != nil {
-		panic(err)
-	}
+
+	go func() {
+		fmt.Println("Blog service started...")
+		if err := s.Serve(lis); err != nil {
+			panic(err)
+		}
+	}()
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+
+	<-ch
+	fmt.Println("Stopping server")
+	s.Stop()
+	lis.Close()
+	fmt.Println("Successfully stop server")
+
 }

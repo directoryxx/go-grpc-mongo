@@ -151,6 +151,38 @@ func (s *server) DeleteBlog(ctx context.Context, req *blogproto.DeleteBlogReques
 	}, nil
 }
 
+func (*server) ListBlog(_ *blogproto.ListBlogRequest, stream blogproto.BlogService_ListBlogServer) error {
+	fmt.Println("List blog request")
+
+	cur, err := collection.Find(context.Background(), primitive.D{{}})
+	if err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Unknown internal error: %v", err),
+		)
+	}
+	defer cur.Close(context.Background()) // Should handle err
+	for cur.Next(context.Background()) {
+		data := &blogItem{}
+		err := cur.Decode(data)
+		if err != nil {
+			return status.Errorf(
+				codes.Internal,
+				fmt.Sprintf("Error while decoding data from MongoDB: %v", err),
+			)
+
+		}
+		stream.Send(&blogproto.ListBlogResponse{Blog: dataToBlogPb(data)}) // Should handle err
+	}
+	if err := cur.Err(); err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Unknown internal error: %v", err),
+		)
+	}
+	return nil
+}
+
 func dataToBlogPb(data *blogItem) *blogproto.Blog {
 	return &blogproto.Blog{
 		Id:       data.ID.Hex(),

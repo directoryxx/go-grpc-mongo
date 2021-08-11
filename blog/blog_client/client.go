@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"go-grpc-mongo/blog/blogproto"
+	"io"
+	"log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,7 +36,9 @@ func main() {
 
 	// doUpdate(c)
 
-	doDelete(c)
+	// doDelete(c)
+
+	doList(c)
 }
 
 func doCreate(c blogproto.BlogServiceClient) {
@@ -122,4 +126,21 @@ func doDelete(c blogproto.BlogServiceClient) {
 	}
 
 	fmt.Println(resDelete)
+}
+
+func doList(c blogproto.BlogServiceClient) {
+	stream, err := c.ListBlog(context.Background(), &blogproto.ListBlogRequest{})
+	if err != nil {
+		log.Fatalf("error while calling ListBlog RPC: %v", err)
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Something happened: %v", err)
+		}
+		fmt.Println(res.GetBlog())
+	}
 }

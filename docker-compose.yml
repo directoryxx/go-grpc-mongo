@@ -1,0 +1,38 @@
+version: "2"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    tty: true
+    restart: always
+    environment:
+      username: test
+      password: test
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports: 
+      - "8010:8010"
+    networks:
+      - fiber
+
+  mongo:
+    image: mongo:5.0.2-focal
+    tty: true
+    restart: always
+    volumes: 
+      - mongodata:/data/db
+    ports: 
+      - "27017:27017"
+    networks:
+      - fiber
+
+networks:
+  fiber:
+
+volumes:
+  mongodata:
+    driver: local
+#  redisdata1:
+#    driver: local

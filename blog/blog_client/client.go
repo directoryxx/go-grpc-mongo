@@ -32,7 +32,9 @@ func main() {
 
 	// doRead(c)
 
-	doUpdate(c)
+	// doUpdate(c)
+
+	doDelete(c)
 }
 
 func doCreate(c blogproto.BlogServiceClient) {
@@ -101,4 +103,23 @@ func doUpdate(c blogproto.BlogServiceClient) {
 	}
 
 	fmt.Println(updateRes)
+}
+
+func doDelete(c blogproto.BlogServiceClient) {
+	deleteBlogReq := &blogproto.DeleteBlogRequest{
+		BlogId: "6113a6fb1ced4cdce6c4bccd",
+	}
+	resDelete, errDelete := c.DeleteBlog(context.Background(), deleteBlogReq)
+	if errDelete != nil {
+		statErr, ok := status.FromError(errDelete)
+		if ok {
+			if statErr.Code() == codes.DeadlineExceeded {
+				fmt.Println("Timeout")
+			} else {
+				fmt.Println("Unexpected Error", statErr)
+			}
+		}
+	}
+
+	fmt.Println(resDelete)
 }

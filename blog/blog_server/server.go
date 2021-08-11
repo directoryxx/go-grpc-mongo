@@ -79,6 +79,48 @@ func (s *server) ReadBlog(ctx context.Context, req *blogproto.ReadBlogRequest) (
 	}, nil
 }
 
+func (s *server) UpdateBlog(ctx context.Context, req *blogproto.UpdateBlogRequest) (*blogproto.UpdateBlogResponse, error) {
+	blog := req.GetBlog()
+
+	oid, err := primitive.ObjectIDFromHex(blog.Id)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v", err),
+		)
+	}
+
+	data := &blogItem{}
+	filter := bson.M{"_id": oid}
+
+	find := collection.FindOne(context.Background(), filter)
+	if err := find.Decode(data); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v", err),
+		)
+	}
+
+	//Update data
+	data.AuthorID = blog.AuthorId
+	data.Title = blog.Title
+	data.Content = blog.Content
+
+	_, updateErr := collection.ReplaceOne(context.Background(), filter, data)
+
+	if updateErr != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot update blog with specified ID: %v", updateErr),
+		)
+	}
+
+	return &blogproto.UpdateBlogResponse{
+		Blog: dataToBlogPb(data),
+	}, nil
+}
+
 func dataToBlogPb(data *blogItem) *blogproto.Blog {
 	return &blogproto.Blog{
 		Id:       data.ID.Hex(),

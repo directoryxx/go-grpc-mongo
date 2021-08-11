@@ -30,7 +30,9 @@ func main() {
 
 	// doCreate(c)
 
-	doRead(c)
+	// doRead(c)
+
+	doUpdate(c)
 }
 
 func doCreate(c blogproto.BlogServiceClient) {
@@ -73,4 +75,30 @@ func doRead(c blogproto.BlogServiceClient) {
 	}
 
 	fmt.Println(resRead)
+}
+
+func doUpdate(c blogproto.BlogServiceClient) {
+	fmt.Println("updatex")
+	updateBlogReq := &blogproto.UpdateBlogRequest{
+		Blog: &blogproto.Blog{
+			Id:       "6113a6fb1ced4cdce6c4bccd",
+			AuthorId: "23",
+			Title:    "content",
+			Content:  "content 2",
+		},
+	}
+	updateRes, errRead := c.UpdateBlog(context.Background(), updateBlogReq)
+	if errRead != nil {
+		statErr, ok := status.FromError(errRead)
+		if ok {
+			fmt.Println(statErr.Code())
+			if statErr.Code() == codes.DeadlineExceeded {
+				fmt.Println("Timeout")
+			} else {
+				fmt.Println("Unexpected Error", statErr.Message())
+			}
+		}
+	}
+
+	fmt.Println(updateRes)
 }
